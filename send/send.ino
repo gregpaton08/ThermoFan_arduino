@@ -44,10 +44,17 @@ void loop(void) {
   if (Serial.available())
   {
     unsigned long payload = 0;
-    if (Serial.read() == '1')
+    char c = Serial.read();
+    if (c == '1')
       payload = 1;
-    else if (Serial.read() == '2')
+    else if (c == '2') 
       payload = 2;
+    else if (c == '3') {
+      if (getStatus())
+        Serial.println("ON");
+      else
+        Serial.println("OFF");
+    }
     else 
       return;
       
@@ -77,4 +84,19 @@ void loop(void) {
     radio.stopListening();
     printf("from recv %lu\n\r", payload);*/
   }
+}
+
+boolean getStatus() {
+  unsigned long payload = 3;
+  radio.write(&payload, sizeof(unsigned long));
+  radio.startListening();
+  unsigned long startTime = millis();
+  while (!radio.available())
+    if (millis() - startTime > 1000 ) {
+      radio.stopListening();
+      return false;
+    }
+  radio.read(&payload, sizeof(unsigned long));
+  radio.stopListening();
+  return payload == 1;
 }
