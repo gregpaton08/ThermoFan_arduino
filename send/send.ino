@@ -18,7 +18,8 @@ void printf_begin(void)
 RF24 radio(9,10);
 
 // Radio pipe addresses for the 2 nodes to communicate.
-const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
+const uint64_t pipes[2] = { 0x1212121212LL, 0x1212121212LL };
+//const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
 
 
 void setup(void) {
@@ -34,10 +35,12 @@ void setup(void) {
 
   // optionally, reduce the payload size.  seems to
   // improve reliability
-  //radio.setPayloadSize(8);
+  radio.setPayloadSize(3);
   
   radio.openWritingPipe(pipes[0]);
   radio.openReadingPipe(1, pipes[1]);
+  radio.setChannel(0x01);
+  radio.printDetails();
 }
 
 void loop(void) {
@@ -59,6 +62,7 @@ void loop(void) {
       return;
       
     radio.write(&payload, sizeof(unsigned long));
+    radio.write("123", 3);
     
     boolean timeout = true;
     while (false) {

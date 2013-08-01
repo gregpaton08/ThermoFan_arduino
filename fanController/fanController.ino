@@ -10,6 +10,7 @@
 #include "nRF24L01.h"
 #include "RF24.h"
 
+const unsigned char PAYLOAD_SIZE = 3;
 
 int serial_putc(char c, FILE *) 
 {
@@ -28,7 +29,8 @@ void printf_begin(void)
 RF24 radio(9, 10);
 
 // Radio pipe addresses for the 2 nodes to communicate.
-const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
+const uint64_t pipes[2] = { 0x1212121212LL, 0x1212121212LL };
+//const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
 
 const char relayPin = 8;
 
@@ -52,10 +54,11 @@ void setup(void) {
 
   // optionally, reduce the payload size.  seems to
   // improve reliability
-  // radio.setPayloadSize(8);
+  radio.setPayloadSize(3);
   
   radio.openWritingPipe(pipes[0]);
   radio.openReadingPipe(1, pipes[1]);
+  radio.setChannel(0x01);
   
   radio.startListening();
   radio.printDetails();
@@ -64,26 +67,27 @@ void setup(void) {
 void loop(void) {
   if (radio.available())
   {
-    unsigned long payload;
-    radio.read(&payload, sizeof(unsigned long));
+    unsigned char payload[PAYLOAD_SIZE];
+    radio.read(&payload, PAYLOAD_SIZE);
 
-    printf("Recv: %lu...", payload);
+    printf("Recv: %c%c%c...\n", payload[0],payload[1], payload[2]);
       
-    if (payload == 1)
+    if (payload[0] == '1')
       digitalWrite(relayPin, LOW);
-    else if (payload == 2)
+    else if (payload[0] == '2')
       digitalWrite(relayPin, HIGH);
-    else if (payload == 3) 
+    else if (payload[0] == '3') 
       sendStatus();
   }
 }
 
 void sendStatus() {
-  unsigned long payload = 2;
+  unsigned char payload[PAYLOAD_SIZE];
+  payload[0] = 2;
   radio.stopListening();
   if (digitalRead(relayPin) == LOW)
-    payload = 1;
+    payload[0] = 1;
     
-  radio.write(&payload, sizeof(unsigned long)); 
+  radio.write(&payload, PAYLOAD_SIZE); 
   radio.startListening();
 }
